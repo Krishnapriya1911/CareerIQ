@@ -41,18 +41,29 @@ Requirements:
 - Return only the structured response matching the provided schema.
 `);
 
-const llm = new ChatGroq({
-  model: "openai/gpt-oss-120b",
-  temperature: 0.7,
-  maxTokens: 1200,
-  maxRetries: 3,
-});
 
-const structuredLlm = llm.withStructuredOutput(questionSchema);
-const chain = promptTemplate.pipe(structuredLlm);
+
+
+
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { isError: true, error: "AI service is not configured", followUps: [] },
+        { status: 503 }
+      );
+    }
+
+    const llm = new ChatGroq({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.7,
+      maxTokens: 1200,
+      maxRetries: 3,
+    });
+    const structuredLlm = llm.withStructuredOutput(questionSchema);
+    const chain = promptTemplate.pipe(structuredLlm);
+
     const body: InterviewRequest = await request.json();
     const { jobTitle, jobDescription } = body;
 

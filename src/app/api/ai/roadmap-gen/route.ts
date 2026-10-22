@@ -44,14 +44,23 @@ const RoadmapSchema = z.object({
 
 const parser = StructuredOutputParser.fromZodSchema(RoadmapSchema as any);
 
-const model = new ChatGroq({
-  model: "openai/gpt-oss-120b",
-  temperature: 0.3,
-  maxTokens: 1000,
-});
+
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { isError: true, error: "AI service is not configured", followUps: [] },
+        { status: 503 }
+      );
+    }
+
+    const model = new ChatGroq({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.3,
+      maxTokens: 1000,
+    });
+
     const body = await req.json();
     const field = body.field || "Software Developer";
     const timeline = body.timeline || "3 months";

@@ -21,7 +21,6 @@ export async function GET(req: Request) {
     );
   }
 
-  console.log("CODE FROM GOOGLE CALLBACK:", code);
 
   const oauthClient = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID!,
@@ -34,7 +33,6 @@ export async function GET(req: Request) {
     const result = await oauthClient.getToken(code);
     tokens = result.tokens;
 
-    console.log("TOKENS FROM GOOGLE CALLBACK:", tokens);
   } catch (err) {
     return NextResponse.json(
       { error: "Token exchange failed" },

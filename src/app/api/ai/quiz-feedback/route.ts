@@ -80,14 +80,23 @@ Return the structured response only.
   throw new Error("Unsupported userStatus + mainFocus combination");
 }
 
-const llm = new ChatGroq({
-  model: "openai/gpt-oss-120b",
-  temperature: 0.2,
-  maxTokens: 1200,
-});
+
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { isError: true, error: "AI service is not configured", followUps: [] },
+        { status: 503 }
+      );
+    }
+
+    const llm = new ChatGroq({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.2,
+      maxTokens: 1200,
+    });
+
     const body: QuizRequest = await request.json();
     const { quizData, userStatus, mainFocus } = body;
 

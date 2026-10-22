@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Sora, Inter, Raleway } from "next/font/google";
+import localFont from "next/font/local";
 
 import "./globals.css";
 
@@ -10,22 +10,34 @@ import { UserDataProvider } from "@/context/UserDataProvider";
 
 import { InterviewProvider } from "@/context/InterviewContext";
 
-const sora = Sora({
-  subsets: ["latin"],
+const sora = localFont({
+  src: [
+    { path: "./fonts/sora-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/sora-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/sora-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-sora",
-  weight: ["400", "600", "700"],
+  display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: [
+    { path: "./fonts/inter-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/inter-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/inter-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-inter",
-  weight: ["400", "600", "700"],
+  display: "swap",
 });
 
-const raleway = Raleway({
-  subsets: ["latin"],
+const raleway = localFont({
+  src: [
+    { path: "./fonts/raleway-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/raleway-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/raleway-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-raleway",
-  weight: ["400", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
