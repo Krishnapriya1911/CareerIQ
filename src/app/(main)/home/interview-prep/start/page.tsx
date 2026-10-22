@@ -39,12 +39,6 @@ import { createClient } from "@/lib/supabase/client";
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 
-if (!VAPI_PUBLIC_KEY) {
-  throw new Error(
-    "NEXT_PUBLIC_VAPI_PUBLIC_KEY is required. Please set it in your .env.local file."
-  );
-}
-
 interface Message {
   type: "user" | "assistant";
   content: string;
@@ -68,7 +62,14 @@ const InterviewStart = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const [vapi] = useState(() => new Vapi(VAPI_PUBLIC_KEY));
+  const [vapi, setVapi] = useState<Vapi | null>(null);
+
+  useEffect(() => {
+    if (!VAPI_PUBLIC_KEY) return;
+    const client = new Vapi(VAPI_PUBLIC_KEY);
+    setVapi(client);
+    return () => { client.stop(); };
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -127,7 +128,7 @@ const InterviewStart = () => {
 
   // ----------------------------VAPI SETUP--------------------------------
   useEffect(() => {
-    if (!interviewData) return;
+    if (!interviewData || !vapi) return;
 
     if (!interviewData.jobTitle) {
       toast.error("Job title is missing for this interview.");
@@ -145,9 +146,10 @@ const InterviewStart = () => {
     }
 
     startCall();
-  }, [interviewData]);
+  }, [interviewData, vapi]);
 
   const startCall = async () => {
+    if (!vapi) return;
     const questions = interviewData?.questions ?? [];
 
     if (questions.length === 0) {
@@ -245,6 +247,7 @@ Key Guidelines:
   };
 
   useEffect(() => {
+    if (!vapi) return;
     const handleSpeechStart = () => setActiveUser(true);
     const handleSpeechEnd = () => setActiveUser(false);
 
@@ -394,7 +397,8 @@ Key Guidelines:
 
   // ---------------------------VAPI MESSAGE SETUP--------------------------
   useEffect(() => {
-    vapi.on("message", (message: any) => {
+    if (!vapi) return;
+    const handleMessage = (message: any) => {
       if (message.type === "transcript" && message.transcriptType === "final") {
         const role = message.role === "user" ? "user" : "assistant";
         const content = message.transcript;
@@ -410,12 +414,14 @@ Key Guidelines:
           return [...prev, { type: role, content }];
         });
       }
-    });
+    };
+    vapi.on("message", handleMessage);
+    return () => { vapi.off("message", handleMessage); };
   }, [vapi]);
 
   const handleEnd = () => {
     stopCamera();
-    vapi.stop();
+    vapi?.stop();
     setIsMicOn(false);
     toast.success("Call ended");
   };
@@ -554,6 +560,16 @@ Key Guidelines:
       setFeedbackLoading(false);
     }
   };
+
+  if (!VAPI_PUBLIC_KEY) {
+    return (
+      <main className="mx-auto max-w-xl p-8 space-y-4">
+        <h1 className="text-2xl font-semibold">Voice interviews are unavailable</h1>
+        <p>The voice interview service has not been configured yet. You can continue using the other preparation tools.</p>
+        <Button onClick={() => router.push("/home/interview-prep")}>Back to interview preparation</Button>
+      </main>
+    );
+  }
 
   return (
     <div className="w-full h-screen overflow-hidden  bg-white p-4">
