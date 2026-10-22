@@ -1,352 +1,112 @@
-# 🚀 CareerIQ - AI-Powered Career Development Platform
+# CareerIQ
 
-<div align="center">
-  <h3>Your Intelligent Career Compass 🧭</h3>
-  <p>Transforming career guidance with AI-powered interviews, personalized learning paths, mentor connections, and smart college recommendations.</p>
+An AI-assisted career development platform built with **Next.js, TypeScript and Supabase**. The application brings together learning roadmaps, interview preparation, job tracking and mentor discovery.
 
-  [**GitHub**](https://github.com) | [**Report Issues**](https://github.com/issues) | [**Documentation**](./DEMO_DATA_SETUP.md)
-</div>
+[Source code](https://github.com/Krishnapriya1911/CareerIQ) · [Report an issue](https://github.com/Krishnapriya1911/CareerIQ/issues) · [Demo data guide](DEMO_DATA_SETUP.md)
 
----
+## Project overview
 
-## 🌟 Problem & Solution
+CareerIQ explores how a single application can help students organize career preparation: assess interests, create a learning plan, practise interviews and track applications. Its codebase includes a React interface, Next.js API routes, PostgreSQL-backed data access and integrations with AI, voice and scheduling services.
 
-### 🎯 The Problem
-Students and professionals face significant challenges in career planning:
-- Lack of personalized guidance on skill development
-- Difficulty preparing for technical interviews
-- Limited access to industry mentorship
-- Overwhelming choices in educational institutions
-- No structured path for career progression
+This is a student portfolio project. Features that depend on external services require their credentials and database configuration; the repository alone is not a fully provisioned deployment.
 
-### 💡 The Solution
-**CareerIQ** is a comprehensive AI-powered career development platform that:
-- Generates personalized learning roadmaps using advanced AI
-- Conducts realistic mock interviews with real-time feedback
-- Connects users with experienced industry mentors
-- Provides data-driven college recommendations
-- Offers intelligent career coaching through AI agents
-- Tracks progress with interactive career roadmaps
+## Explore the implementation
 
-## ✨ Key Features
+| Area | Source |
+| --- | --- |
+| Application pages | [Next.js app routes](src/app) |
+| API endpoints | [API routes](src/app/api) for AI generation, feedback, jobs, calendar and integrations |
+| UI components | [Components](src/components) |
+| Shared application logic | [Libraries](src/lib) and [context providers](src/context) |
+| Demo data | [Seed scripts](scripts) and [setup guide](DEMO_DATA_SETUP.md) |
 
-### 🤖 AI Career Coach
-Intelligent conversational AI agent that provides personalized career guidance based on your profile, interests, and goals. Uses Google Gemini and LangChain for context-aware responses.
+The application includes interfaces and integration code for:
 
-### 🗺️ AI-Generated Learning Roadmaps
-Creates personalized learning paths based on your target career and current skills. Generates structured, milestone-based roadmaps with resources and timeline estimates.
+- Career guidance and personalized learning roadmaps.
+- Interview question generation, voice interview sessions and feedback.
+- Job application tracking and learning progress.
+- Mentor discovery, messaging and scheduling.
+- College recommendations using demo data.
 
-### 🎤 Voice AI Mock Interviews
-Practice interviews with realistic AI agents powered by Vapi and Deepgram. Get real-time feedback on technical knowledge, communication skills, and problem-solving approaches. Transcripts and AI-generated feedback are automatically saved.
+Integration presence does not establish that a feature works with every account or provider configuration. Validate each enabled workflow before sharing a live demo.
 
-### 📋 Job Tracker
-Manage your job applications and interview prep in one place. Track application status, upcoming interviews, and preparation progress with integrated interview scheduling.
+## Technology
 
-### 🧠 Interview Preparation System
-- Generate interview questions based on job descriptions
-- Conduct AI-powered mock interviews with voice interaction
-- Receive detailed feedback on interview performance
-- Build interview history and track improvement over time
+| Layer | Tools |
+| --- | --- |
+| Web application | Next.js 16.1.1, React 19.2.3, TypeScript |
+| Interface | Tailwind CSS, Radix UI, Framer Motion, Recharts |
+| Database and authentication | Supabase PostgreSQL, Supabase Auth |
+| AI integrations | Gemini, Groq, LangChain |
+| Optional services | Vapi, Pinecone, Google Calendar, ImageKit, Google Cloud Storage, Razorpay, Upstash |
 
-### 📚 My Learning Tracks
-Access and manage your personalized learning roadmaps. Track progress through different career paths with structured milestones and resource recommendations.
+See [package.json](package.json) for the complete dependency list and available scripts.
 
-### 🎓 College Recommendation Engine
-Smart recommendations based on your preferences for:
-- Budget range and fee structure
-- Placement outcomes and average packages
-- Geographic location
-- Specific programs and specializations
-- College type (Government/Private)
+## Architecture
 
-### 👥 Mentor Connect
-Direct access to industry experts for 1:1 sessions. Connect with mentors across different specializations for guidance, mock interviews, and career mentorship via video calls.
-
-### 📅 Calendar & Scheduling
-Integrated calendar for managing mentorship sessions, mock interviews, and career milestones. Sync with Google Calendar for seamless scheduling.
-
-### 💬 Messaging
-Direct messaging with mentors and career coaches. Real-time communication for quick questions and guidance.
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework:** Next.js 16.1.1 (with Turbopack)
-- **Runtime:** React 19.2.3, TypeScript 5
-- **Styling:** Tailwind CSS v4, Framer Motion, Styled Components
-- **UI Components:** Radix UI, Lucide React, shadcn/ui
-- **Visualization:** Three.js, React Flow, Recharts
-
-### AI & Agents
-- **LLMs:** Google Gemini API, Groq
-- **Voice AI:** Vapi AI for mock interviews
-- **Speech Recognition:** Deepgram
-- **AI Framework:** LangChain (Google, Groq integrations)
-- **Vector Database:** Pinecone for embeddings
-- **Search:** Tavily, SerpApi, NewsAPI
-
-### Backend & Database
-- **Backend:** Next.js API Routes
-- **Database:** Supabase (PostgreSQL)
-- **Authentication:** Supabase Auth, Google OAuth
-- **Real-time:** Supabase Realtime
-- **Cache:** Upstash Redis
-
-### External Services
-- **Video Communication:** ZegoCloud (1:1 video calls)
-- **File Storage:** Google Cloud Storage, ImageKit
-- **Calendar:** Google Calendar API
-- **Payments:** Razorpay
-- **Verification:** hCaptcha
-
-### Development & Deployment
-- **Package Manager:** pnpm
-- **Build Tool:** Next.js build with Turbopack
-- **Version Control:** Git
-
-## 🏗️ Architecture
-
-### System Design
-```
-┌─────────────────┐
-│   Frontend      │
-│  (Next.js 16)   │
-└────────┬────────┘
-         │
-    ┌────▼────────────────┐
-    │  API Routes         │
-    │  (Next.js Backend)  │
-    └────┬─────────────────┘
-         │
-    ┌────┴──────────────────────────┐
-    │                               │
-┌───▼─────────┐    ┌──────────────▼──┐    ┌──────────────┐
-│  Supabase   │    │  External APIs  │    │  AI Services │
-│  (Database) │    │  (Vapi, Zego)   │    │  (Gemini)    │
-└─────────────┘    └─────────────────┘    └──────────────┘
+```mermaid
+flowchart TD
+    A["React application"] --> B["Next.js API routes"]
+    A --> C["Supabase Auth and database"]
+    B --> C
+    B --> D["AI and voice providers"]
+    B --> E["Calendar, storage and other integrations"]
 ```
 
-### Core Features Flow
-1. **Authentication:** Supabase Auth (Email/Google OAuth)
-2. **Profile Setup:** User data stored in Supabase
-3. **Quiz Assessment:** Career preference questionnaire
-4. **AI Roadmap Generation:** LangChain + Gemini
-5. **Interview Prep:** Vapi AI voice interviews + transcript → AI feedback
-6. **Learning Progress:** Supabase tracks roadmap completion
-7. **Mentor Connection:** ZegoCloud video calls
-8. **College Recommendations:** Smart filtering based on preferences
+## Local development
 
-## 📊 Database Schema
+Use Node.js 22 and pnpm 9 or later.
 
-### Key Tables
-
-**users**
-- id, email, full_name, avatar
-- current_status, main_focus
-- isQuizDone, created_at
-
-**roadmapUsers**
-- id, user_id, roadmap_data, created_at
-- isStarted, progress, status, timeline
-
-**others** (Interview Feedback)
-- id, userId, jobTitle, interviewInsights
-- created_at
-
-**mentors**
-- id, full_name, email, bio
-- expertise[], current_position, availability
-- rating, avatar, is_verified
-
-**colleges**
-- id, college_name, location
-- best_suit_for[], fees, placement, type
-
-**messages** (1:1 messaging)
-- id, sender_id, receiver_id, content
-- created_at, read_at
-
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js:** v18.0.0 or higher
-- **pnpm:** v8.0.0 or higher (recommended)
-- **Supabase Account:** For database and authentication
-- **API Keys:** Gemini, Vapi, Razorpay, etc.
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd career-iq
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up Environment Variables**
-   Create a `.env.local` file in the root directory:
-   ```
-   # Supabase
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-
-   # AI Services
-   GEMINI_API_KEY=your_gemini_key
-   NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_key
-   VAPI_PUBLIC_KEY=your_vapi_public_key
-
-   # Google OAuth
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   GOOGLE_REDIRECT_URI=http://localhost:3000/api/google/callback
-
-   # Other Services
-   RAZORPAY_KEY_ID=your_razorpay_key
-   RAZORPAY_KEY_SECRET=your_razorpay_secret
-
-   # Storage
-   IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
-   IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-
-   # See env-vars.txt for complete list
-   ```
-
-4. **Set up Demo Data (Optional)**
-   ```bash
-   npx ts-node scripts/seed-demo-mentors.ts
-   npx ts-node scripts/seed-demo-colleges.ts
-   ```
-   See [DEMO_DATA_SETUP.md](./DEMO_DATA_SETUP.md) for details.
-
-5. **Run the Development Server**
-   ```bash
-   pnpm dev
-   ```
-   Open [http://localhost:3000](http://localhost:3000) to view the application.
-
-### Build & Deploy
 ```bash
-# Build the application
-pnpm build
+git clone https://github.com/Krishnapriya1911/CareerIQ.git
+cd CareerIQ
+pnpm install --frozen-lockfile
+cp .env.example .env.local
+```
 
-# Start production server
-pnpm start
+Fill in the required environment values before starting:
 
-# Run linting
+| Configuration | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public client key |
+| `GROQ_API_KEY` | Groq-backed AI routes |
+| `GEMINI_API_KEY` / `NEXT_PUBLIC_GEMINI_API_KEY` | Server/client Gemini code paths, as used by the selected feature |
+| `NEXT_PUBLIC_VAPI_PUBLIC_KEY` | Voice interview integration |
+
+The example file covers the core integrations, not every optional service. Search for `process.env` in the code for feature-specific requirements. Some Gemini and search integrations currently use `NEXT_PUBLIC_` variables, which are visible in browser bundles; use appropriately restricted demo credentials, and move privileged operations server-side before a public production rollout.
+
+Provision the Supabase tables and access policies required by the features you enable. The repository does not include a complete database migration set; the [demo data guide](DEMO_DATA_SETUP.md) covers sample mentors and colleges, not full schema provisioning. Use a dedicated development database.
+
+```bash
+pnpm dev
+```
+
+Open [localhost:3000](http://localhost:3000). Database-backed pages and API calls need valid configuration; a successful dependency installation does not verify these workflows.
+
+## Checks and production build
+
+```bash
 pnpm lint
+pnpm exec tsc --noEmit
+pnpm build
+pnpm start
 ```
 
-## 📁 Project Structure
+These are commands to run in your configured environment, not a claim that all checks currently pass. A complete production build and functional verification require the relevant environment values and services.
 
-```
-src/
-├── app/                          # Next.js app directory
-│   ├── (main)/                   # Main application routes
-│   │   └── home/
-│   │       ├── interview-prep/   # Interview preparation
-│   │       ├── job-tracker/      # Job application tracking
-│   │       ├── mentor-connect/   # Mentor marketplace
-│   │       ├── ai-tools/         # AI features
-│   │       └── my-tracks/        # Learning roadmaps
-│   ├── api/                      # API routes
-│   │   ├── feedback/             # Interview feedback generation
-│   │   ├── ai/                   # AI agent endpoints
-│   │   └── ...
-│   └── auth/                     # Authentication pages
-├── components/                   # Reusable React components
-│   ├── ui/                       # shadcn/ui components
-│   └── ...
-├── context/                      # React Context providers
-│   ├── InterviewContext.tsx
-│   ├── UserDataProvider.tsx
-│   └── userQuizProvider.tsx
-├── lib/
-│   ├── functions/                # Utility functions
-│   ├── supabase/                 # Supabase clients
-│   ├── store/                    # Zustand stores
-│   └── types/                    # TypeScript definitions
-└── public/                       # Static assets
-```
+## Deployment preparation
 
-## 🎯 Key Features Implementation
+1. Configure the project on your Node.js-compatible host with the build command `pnpm build`.
+2. Add environment variables through the host's settings; keep secrets out of Git.
+3. Configure the Supabase site URL, redirect allowlist and any Google OAuth callback URLs for the deployed domain.
+4. Verify sign-in, roadmap generation, job tracking and interview workflows against the deployed environment.
+5. Confirm demo data and permissions before sharing the deployment.
 
-### Interview System Flow
-1. User selects job and generates interview questions (AI via Gemini)
-2. Vapi initializes voice call with interviewer agent
-3. Deepgram captures audio transcription
-4. Interview ends → Transcript sent to `/api/feedback`
-5. Gemini generates structured feedback
-6. Feedback stored in Supabase `others` table
-7. User views feedback in Interview History
+A verified live demo link will be added once deployment and its core workflows have been checked.
 
-### Career Coach Flow
-1. User inputs question/topic
-2. System retrieves user's quiz data (career preferences)
-3. LangChain agent constructs context
-4. Gemini generates personalized response
-5. Follow-up questions auto-generated
-6. History maintained in chat interface
+## Demo data and contributions
 
-### Mentor Matching Flow
-1. System filters mentors by expertise and availability
-2. Displays mentors with ratings and bios
-3. User books session → ZegoCloud video call initiated
-4. Session recorded and available for review
-5. Mentor feedback added to user profile
+The mentor and college records in the seed scripts are demonstration data. They do not represent verified real-world mentor availability or current admissions/placement information.
 
-## 🔒 Security
-
-- **Environment Secrets:** All sensitive keys in `.env.local` (excluded from git)
-- **Supabase RLS:** Row-level security policies on all tables
-- **Authentication:** Supabase Auth with OAuth support
-- **API Protection:** API routes validate user authentication
-- **Input Validation:** ZOD schemas for request validation
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-# Connect your GitHub repo to Vercel
-# Set environment variables in Vercel dashboard
-# Push to main branch to auto-deploy
-```
-
-### Self-Hosted
-1. Set environment variables on server
-2. Run `pnpm build`
-3. Run `pnpm start`
-4. Use process manager (PM2, systemd) for production
-
-## 📚 Documentation
-
-- **[DEMO_DATA_SETUP.md](./DEMO_DATA_SETUP.md)** - How to seed demo mentors and colleges
-- **env-vars.txt** - Complete list of required environment variables
-- **requirements.md** - Detailed requirements documentation
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## ⚠️ Disclaimer
-
-This is a student portfolio project created for educational purposes. Demo data includes sample mentors and colleges for demonstration. For production use, replace with real data and implement proper verification processes.
-
----
-
-<div align="center">
-  <p><strong>CareerIQ</strong> - Your Intelligent Career Compass 🧭</p>
-  <p>Built with ❤️ for career development</p>
-</div>
+For changes, open an issue or pull request with a clear description, reproduction steps where relevant, and the checks you ran.
