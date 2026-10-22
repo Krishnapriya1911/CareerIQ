@@ -2,7 +2,7 @@
 
 An AI-assisted career development platform built with **Next.js, TypeScript and Supabase**. The application brings together learning roadmaps, interview preparation, job tracking and mentor discovery.
 
-[Source code](https://github.com/Krishnapriya1911/CareerIQ) · [Report an issue](https://github.com/Krishnapriya1911/CareerIQ/issues) · [Demo data guide](DEMO_DATA_SETUP.md)
+[Source code](https://github.com/Krishnapriya1911/CareerIQ) · [Report an issue](https://github.com/Krishnapriya1911/CareerIQ/issues) · [Demo data guide](DEMO_DATA_SETUP.md) · [Deployment verification](DEPLOYMENT_STATUS.md)
 
 ## Project overview
 
@@ -88,6 +88,7 @@ Open [localhost:3000](http://localhost:3000). Database-backed pages and API call
 
 ```bash
 pnpm lint
+pnpm test:config
 pnpm exec tsc --noEmit
 pnpm build
 pnpm start

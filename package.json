@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:config": "ts-node --project scripts/tsconfig.json scripts/verify-service-config.ts"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.92.2",
