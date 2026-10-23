@@ -10,11 +10,14 @@ interface Job {
   apply_options: { title: string; link: string }[];
 }
 
+export const dynamic = "force-dynamic";
+
 // Server-side data fetching
 async function getJobs(): Promise<Job[]> {
+  if (!process.env.SERPAPI_KEY) return [];
   try {
     const response = await getJson({
-      // api_key: process.env.SERPAPI_KEY,
+      api_key: process.env.SERPAPI_KEY,
       engine: "google_jobs",
       google_domain: "google.co.in",
       q: "gen ai dev",
@@ -44,7 +47,7 @@ async function getJobs(): Promise<Job[]> {
 // Main page component
 export default async function JobsData() {
   const jobs = await getJobs();
-  console.log(jobs);
+
 
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>

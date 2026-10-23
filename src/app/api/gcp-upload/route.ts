@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
 
-export async function GET() {
+export async function POST() {
   try {
     const projectId = process.env.GCP_PROJECT_ID;
     const serviceAccountKey = process.env.GCP_SERVICE_ACCOUNT_KEY;
@@ -12,7 +12,7 @@ export async function GET() {
     if (!projectId || !serviceAccountKey || !bucketName) {
       return NextResponse.json(
         { error: "GCP configuration is missing" },
-        { status: 500 }
+        { status: 503 }
       );
     }
 
@@ -85,7 +85,7 @@ export async function GET() {
 
     return NextResponse.json(
       { error: message },
-      { status: 500 }
+      { status: 503 }
     );
   }
 }

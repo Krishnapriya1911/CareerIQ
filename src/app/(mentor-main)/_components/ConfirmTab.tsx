@@ -49,7 +49,7 @@ const ConfirmTab = () => {
 
       // Fetch user info
       const { data: users, error: userError } = await supabase
-        .from("users")
+        .from("users_directory")
         .select("id, userName, userEmail, avatar")
         .in("id", studentIds);
 
@@ -92,7 +92,7 @@ const ConfirmTab = () => {
           ) {
             // Fetch student details for the accepted session
             const { data: user } = await supabase
-              .from("users")
+              .from("users_directory")
               .select("id, userName, userEmail, avatar")
               .eq("id", updated.student_id)
               .single();

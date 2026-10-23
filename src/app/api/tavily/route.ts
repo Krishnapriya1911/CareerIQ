@@ -4,8 +4,7 @@ import { tavily } from "@tavily/core";
 export async function POST(req: Request) {
   try {
     const apiKey =
-      process.env.TAVILY_API_KEY ||
-      process.env.NEXT_PUBLIC_TAVILY_API_KEY;
+      process.env.TAVILY_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(

@@ -33,7 +33,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/confirm`,
         queryParams: {
           role: "user",
         },
@@ -56,7 +56,7 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/email-verified`,
+            emailRedirectTo: `${window.location.origin}/auth/confirm`,
             // captchaToken: token || undefined,
             data: { role: "user" },
           },
@@ -68,6 +68,7 @@ export default function AuthPage() {
           setError("Please check your email for verification link");
           return;
         }
+        if (data.session) router.push("/auth/callback");
       } else {
         // login functionality
         const { data, error } = await supabase.auth.signInWithPassword({

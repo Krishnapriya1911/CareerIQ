@@ -1,233 +1,102 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
 
-// users ----
 interface DBUser {
-  id: number;
-  userName: string;
-  userEmail: string;
-  avatar: string;
-  created_at: string;
-  totalCredits: number;
-  remainingCredits: number;
-  invite_link: string;
-  current_status: string;
-  userPhone: string;
-  institutionName: string;
-  mainFocus: string;
-  // calendarConnected: boolean;
-  is_verified: boolean;
-  isQuizDone: boolean;
-  latitude: number;
-  longitude: number;
-  isPro: boolean;
-  google_refresh_token: string;
+  id: number; userName: string; userEmail: string; avatar: string; created_at: string;
+  totalCredits: number; remainingCredits: number; invite_link: string; current_status: string;
+  userPhone: string; institutionName: string; mainFocus: string; is_verified: boolean;
+  isQuizDone: boolean; latitude: number; longitude: number; isPro: boolean; calendarconnected: boolean;
 }
-// mentors ---
 interface DBMentor {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string | null;
-  linkedin: string | null;
-  bio: string | null;
-  expertise: string[];
-  current_position: string;
-  availability: boolean;
-  rating: number;
-  avatar: string | null;
-  created_at: string;
-  is_verified: boolean;
-  video_url: string | null;
+  id: string; full_name: string; email: string; phone: string | null; linkedin: string | null;
+  bio: string | null; expertise: string[]; current_position: string; availability: boolean;
+  rating: number; avatar: string | null; created_at: string; is_verified: boolean; video_url: string | null;
 }
-
 interface UserDataContextType {
-  user: DBUser | null;
-  mentor: DBMentor | null;
+  user: DBUser | null; mentor: DBMentor | null;
   setUser: React.Dispatch<React.SetStateAction<DBUser | null>>;
   setMentor: React.Dispatch<React.SetStateAction<DBMentor | null>>;
-  loading: boolean;
-  isNewUser: boolean;
-  isNewMentor: boolean;
+  loading: boolean; error: string | null; isNewUser: boolean; isNewMentor: boolean;
   ensureUserInDB: () => Promise<void>;
 }
-
-const UserDataContext = createContext<UserDataContextType | undefined>(
-  undefined
-);
+const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
+// OAuth refresh tokens never enter the browser profile/context payload.
+const userColumns = 'id,userName,userEmail,avatar,created_at,totalCredits,remainingCredits,invite_link,current_status,userPhone,institutionName,mainFocus,is_verified,isQuizDone,latitude,longitude,isPro,calendarconnected';
 
 export function UserDataProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const [user, setUser] = useState<DBUser | null>(null);
   const [mentor, setMentor] = useState<DBMentor | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isNewUser, setIsNewUser] = useState<boolean>(false);
-  const [isNewMentor, setIsNewMentor] = useState<boolean>(false);
-
-  useEffect(() => {
-    ensureUserInDB();
-  }, []);
-
-  const ensureUserInDB = async () => {
-    setLoading(true);
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [isNewMentor, setIsNewMentor] = useState(false);
+  const ensureUserInDB = useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const { data: authData, error: authError } =
-        await supabase.auth.getUser();
-
-      if (authError) {
-        console.log("❌ Error fetching auth user:", authError.message);
-        setLoading(false);
-        return;
-      }
-
-      const authUser = authData?.user;
-      if (!authUser) {
-        console.log("⚠️ No authenticated user");
-        setLoading(false);
-        return;
-      }
-
-      console.log("✅ Authenticated user:", authUser.email);
-
-      // checking id user signed with email
-      const provider = authUser.app_metadata?.provider;
-      if (provider === "email") {
-        localStorage.setItem("emailProvider", "true");
-        // console.log("✅ User signed in with email");
-      } else {
-        localStorage.setItem("emailProvider", "false");
-        // console.log("⚠️ User signed in with provider:", provider);
-      }
-
-      const role = authUser.user_metadata?.role;
-      console.log("⚠️ User role:", role);
-
-      if (role === "mentor") {
-        // --- Mentors ---
-        const { data: existingMentors, error: fetchError } = await supabase
-          .from("mentors")
-          .select("*")
-          .eq("email", authUser.email);
-
-        if (fetchError) throw fetchError;
-
-        if (!existingMentors || existingMentors.length === 0) {
-          const name = authUser.user_metadata?.full_name;
-          const avatar =
-            authUser.user_metadata?.avatar_url ||
-            authUser.user_metadata?.picture;
-
-          const { data: inserted, error: insertError } = await supabase
-            .from("mentors")
-            .insert([
-              {
-                full_name: name,
-                email: authUser.email,
-                avatar,
-                expertise: [],
-                current_position: "",
-                availability: true,
-                rating: 0,
-              },
-            ])
-            .select()
-            .single();
-
+      const { data: { user: account }, error: authError } = await supabase.auth.getUser();
+      if (authError || !account) { setUser(null); setMentor(null); return; }
+      if (!account.email) throw new Error('An account email is required.');
+      const { data: ownMentor, error: mentorError } = await supabase.from('mentors').select('*').eq('auth_uid', account.id).maybeSingle();
+      if (mentorError) throw mentorError;
+      // Metadata chooses an onboarding preference, not an authorization privilege.
+      // Server checks and RLS authorize only the account's own database profile.
+      const enrollMentor = Boolean(ownMentor) || window.location.pathname.startsWith('/auth-mentor') || account.user_metadata?.role === 'mentor';
+      if (enrollMentor) {
+        let profile = ownMentor;
+        if (!profile) {
+          const { error: insertError } = await supabase.from('mentors').upsert({
+            auth_uid: account.id, email: account.email,
+            full_name: account.user_metadata?.full_name || 'CareerIQ Mentor',
+            avatar: account.user_metadata?.avatar_url || account.user_metadata?.picture || null,
+            expertise: [], current_position: '', availability: true, rating: 0,
+          }, { onConflict: 'auth_uid', ignoreDuplicates: true });
           if (insertError) throw insertError;
-          // console.log("🟡 Mentor inserted to mentors table...");
-
-          setMentor(inserted);
-          setIsNewMentor(true);
-          localStorage.setItem("isOnboardingDoneMentor", "false"); //only for mentor
-          setLoading(false);
-        } else {
-          setMentor(existingMentors[0]);
-          // console.log("✅ Mentor found in mentors table, not a new...");
-          setIsNewMentor(false);
-          setLoading(false);
-        }
+          const { data, error: fetchError } = await supabase.from('mentors').select('*').eq('auth_uid', account.id).single();
+          if (fetchError) throw fetchError;
+          profile = data;
+          setIsNewMentor(true); localStorage.setItem('isOnboardingDoneMentor', 'false');
+        } else setIsNewMentor(false);
+        setMentor(profile); setUser(null);
       } else {
-        // check if user already exists in table users
-        const { data: existingUsers, error: fetchError } = await supabase
-          .from("users")
-          .select("*")
-          .eq("userEmail", authUser.email);
-
-        if (fetchError) {
-          console.error("❌ Error fetching user from DB:", fetchError.message);
-          setLoading(false);
-          return;
-        }
-
-        if (!existingUsers || existingUsers.length === 0) {
-          // console.log("🟡 No user in DB, inserting new one...");
-
-          const name =
-            authUser.user_metadata?.full_name ||
-            authUser.user_metadata?.name ||
-            "CareerIQUser";
-          const avatar =
-            authUser.user_metadata?.avatar_url ||
-            authUser.user_metadata?.picture;
-
-          const { data: inserted, error: insertError } = await supabase
-            .from("users")
-            .insert([
-              {
-                userName: name,
-                userEmail: authUser.email,
-                avatar,
-                invite_link: uuidv4(),
-              },
-            ])
-            .select()
-            .single();
-
-          if (insertError) {
-            console.log("❌ Error inserting user:", insertError.message);
-          } else {
-            // console.log("✅ New user inserted into tables:");
-            localStorage.setItem("isOnboardingDone", "false"); // set onboarding to false
-            setUser(inserted);
-            setIsNewUser(true);
-          }
-        } else {
-          setUser(existingUsers[0]);
-          setIsNewUser(false);
-        }
+        const { data: existing, error: fetchError } = await supabase.from('users').select(userColumns).eq('auth_uid', account.id).maybeSingle();
+        if (fetchError) throw fetchError;
+        let profile = existing;
+        if (!profile) {
+          const { error: insertError } = await supabase.from('users').upsert({
+            auth_uid: account.id, userName: account.user_metadata?.full_name || account.user_metadata?.name || 'CareerIQ User',
+            userEmail: account.email, avatar: account.user_metadata?.avatar_url || account.user_metadata?.picture || null, invite_link: uuidv4(),
+          }, { onConflict: 'auth_uid', ignoreDuplicates: true });
+          if (insertError) throw insertError;
+          const { data, error: profileError } = await supabase.from('users').select(userColumns).eq('auth_uid', account.id).single();
+          if (profileError) throw profileError;
+          profile = data; setIsNewUser(true); localStorage.setItem('isOnboardingDone', 'false');
+        } else setIsNewUser(false);
+        setUser(profile as DBUser); setMentor(null);
       }
-    } catch (err) {
-      console.error("❌ Unexpected error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <UserDataContext.Provider
-      value={{
-        user,
-        setUser,
-        loading,
-        isNewUser,
-        ensureUserInDB,
-        isNewMentor,
-        mentor,
-        setMentor,
-      }}
-    >
-      {children}
-    </UserDataContext.Provider>
-  );
+      localStorage.setItem('emailProvider', String(account.app_metadata?.provider === 'email'));
+    } catch {
+      setUser(null); setMentor(null);
+      setError('Your profile could not be loaded. Please retry. If this continues, the project database setup needs attention.');
+    } finally { setLoading(false); }
+  }, [supabase]);
+  useEffect(() => {
+    void ensureUserInDB();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') { setUser(null); setMentor(null); setLoading(false); }
+      else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        // Leave the auth callback before making another Supabase request.
+        setTimeout(() => { void ensureUserInDB(); }, 0);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [ensureUserInDB, supabase]);
+  return <UserDataContext.Provider value={{ user, mentor, setUser, setMentor, loading, error, isNewUser, isNewMentor, ensureUserInDB }}>{children}</UserDataContext.Provider>;
 }
-
 export function useUserData() {
-  const context = useContext(UserDataContext);
-  if (context === undefined) {
-    throw new Error("useUserData must be used within a UserDataProvider");
-  }
-  return context;
+  const value = useContext(UserDataContext);
+  if (!value) throw new Error('useUserData must be used within a UserDataProvider');
+  return value;
 }

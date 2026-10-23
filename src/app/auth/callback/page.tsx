@@ -55,7 +55,7 @@ const steps = [
 export default function CallbackPage() {
   const supabase = createClient();
   const router = useRouter();
-  const { user, loading, ensureUserInDB, isNewUser } = useUserData();
+  const { user, loading, error, ensureUserInDB, isNewUser } = useUserData();
 
   // useEffect(() => {
   //   ensureUserInDB();
@@ -89,6 +89,11 @@ export default function CallbackPage() {
     }
   }
 
+  useEffect(() => {
+    if (!loading && !user && !error) router.replace("/auth");
+  }, [loading, user, error, router]);
+
+  if (error) return <main className="min-h-screen grid place-content-center gap-4 p-8"><p role="alert">{error}</p><Button onClick={() => void ensureUserInDB()}>Retry loading profile</Button><Button variant="outline" onClick={signOut}>Sign out</Button></main>;
   if (loading || !user) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -108,7 +113,7 @@ export default function CallbackPage() {
       ? localStorage.getItem("isOnboardingDone")
       : null;
 
-  if (onboardingStatus === "false" || isNewUser) {
+  if (!user.is_verified || onboardingStatus === "false" || isNewUser) {
     return (
       <div className="w-full h-screen relative bg-white overflow-hidden">
         <div

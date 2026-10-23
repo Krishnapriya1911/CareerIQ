@@ -12,6 +12,7 @@ interface Job {
 }
 
 export async function GET(req: NextRequest) {
+  if (!process.env.SERPAPI_KEY) return NextResponse.json({ error: "Search service is not configured" }, { status: 503 });
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q") || "software developer";
 
