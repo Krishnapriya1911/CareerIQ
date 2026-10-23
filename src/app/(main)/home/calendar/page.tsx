@@ -98,16 +98,6 @@ export default function MyCalendar() {
   // =====================================
   // ========GOOGLE CALENDAR=============
 
-  const getRefreshToken = async () => {
-    const { data } = await supabase
-      .from("users")
-      .select("google_refresh_token")
-      .eq("id", user?.id)
-      .single();
-
-    return data?.google_refresh_token;
-  };
-
   const handleSelectSlot = (slotInfo: any) => {
     setSelectedDate(slotInfo.start);
     setSelectedEvent(null);
@@ -339,7 +329,7 @@ export default function MyCalendar() {
         </p>
 
         <Link href={`/api/google/connect?user_id=${user?.id}`}>
-          {user?.google_refresh_token ? (
+          {user?.calendarconnected ? (
             <Button
               className="font-inter cursor-pointer flex items-center gap-2 bg-green-500 text-white hover:bg-green-600"
               size="sm"

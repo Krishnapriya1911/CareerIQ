@@ -93,7 +93,7 @@ export default function MentorConnectPage() {
   const [open, setOpen] = useState(false);
 
   const supabase = createClient();
-  const { user } = useUserData();
+  const { user, ensureUserInDB } = useUserData();
   const router = useRouter();
 
   // fetching mentor details-------------------------------
@@ -144,34 +144,18 @@ export default function MentorConnectPage() {
       return;
     }
 
-    const { error: sessionError } = await supabase
-      .from("mentor_sessions")
-      .insert([
-        {
-          mentor_id: mentorId,
-          mentorName: mentor?.full_name,
-          mentorAvatar: mentor?.avatar,
-          student_id: user.id,
-          session_type:
-            sessionType === "10"
-              ? "10 min session"
-              : sessionType === "30"
-              ? "30 min session"
-              : "45 min session",
-          status: "pending",
-          requested_at: new Date().toISOString(),
-          scheduled_at: date.toISOString(),
-          notes,
-          vc_link: null,
-          completed_at: null,
-        },
-      ]);
+    const { error: sessionError } = await supabase.rpc("book_mentor_session", {
+      p_mentor_id: Number(mentorId), p_minutes: Number(sessionType),
+      p_scheduled_at: date.toISOString(), p_notes: notes,
+    });
 
     if (sessionError) {
       console.error("Error creating session:", sessionError);
       toast.error("Failed to create session. Please try again.");
       return;
     }
+
+    await ensureUserInDB();
 
     // FIRING NOTIFICATION----------------
     triggerSessionNotification({
@@ -185,16 +169,6 @@ export default function MentorConnectPage() {
       mentorName: mentor?.full_name || "",
       scheduledAt: date,
     });
-
-    const newCredits = user.remainingCredits - cost;
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ remainingCredits: newCredits })
-      .eq("id", user.id);
-
-    if (updateError) {
-      console.error("Error updating credits:", updateError);
-    }
 
     setOpen(false);
     setSessionType(null);

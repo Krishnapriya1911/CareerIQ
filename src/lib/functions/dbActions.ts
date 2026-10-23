@@ -73,7 +73,7 @@ export async function getMatchingMentors(
   // }
 
   const { data, error } = await supabase
-    .from("mentors")
+    .from("mentors_directory")
     .select("*")
     .gt("rating", 4)
     .order("rating", { ascending: false })
@@ -101,7 +101,7 @@ export async function getAllMentorsPaginated(
 ): Promise<PaginatedMentors> {
   const supabase = createClient();
 
-  const { data: mentors, error } = await supabase.from("mentors").select("*");
+  const { data: mentors, error } = await supabase.from("mentors_directory").select("*");
 
   if (error || !mentors) {
     console.error("Mentors fetch error:", error);
@@ -153,7 +153,7 @@ export async function getRandomUsersByInstitution(
 
   // fetch users from same institution
   const { data, error } = await supabase
-    .from("users")
+    .from("users_directory")
     .select("*")
     .eq("institutionName", institutionName)
     .neq("id", currentUserId)
@@ -180,10 +180,10 @@ export async function getRandomUsersByCareer(
   console.log("🎓 Career:", career);
 
   const { data, error } = await supabase
-    .from("userQuizData")
+    .from("users_directory")
     .select("*")
     .eq("selectedCareer", career)
-    .neq("userId", currentUserId)
+    .neq("id", currentUserId)
     .limit(20);
 
   if (error) {
@@ -197,7 +197,7 @@ export async function getRandomUsersByCareer(
 
   const shuffled = data.sort(() => Math.random() - 0.5);
   // console.log("🎓 Randomly selected users:", shuffled);
-  return shuffled.slice(0, 10);
+  return shuffled.slice(0, 10).map(profile => ({ ...profile, userId: profile.id, userAvatar: profile.avatar }));
 }
 
 export async function getUserQuizData(userId: any): Promise<UserQuizData[]> {
@@ -259,7 +259,7 @@ export async function getRandomMentorVideos(): Promise<MentorVideo[]> {
   // }
 
   const { data, error } = await supabase
-    .from("mentors")
+    .from("mentors_directory")
     .select("id, video_url")
     .not("video_url", "is", null);
 
@@ -282,7 +282,7 @@ export async function getAllMentorProfiles(): Promise<MentorProfile[]> {
   const supabase = createClient();
 
   const { data, error } = await supabase
-    .from("mentors")
+    .from("mentors_directory")
     .select(
       `id, full_name, email, phone, linkedin, bio, expertise, current_position, availability, rating, avatar`
     );
@@ -568,7 +568,7 @@ export async function paginatedColleges(
 //   const end = start + limit - 1;
 
 //   const { data, error, count } = await supabase
-//     .from("mentors")
+//     .from("mentors_directory")
 //     .select("*", { count: "exact" })
 //     .order("created_at", { ascending: false })
 //     .range(start, end);

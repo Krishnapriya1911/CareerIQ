@@ -39,7 +39,7 @@ const MessageNamesList: React.FC = () => {
       const { data: messages, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+        .or(`and(sender_id.eq.${user.id},sender_type.eq.peer),and(receiver_id.eq.${user.id},receiver_type.eq.peer)`);
 
       if (error) {
         console.error("Error fetching messages:", error);
@@ -57,27 +57,21 @@ const MessageNamesList: React.FC = () => {
       const mentorIds = new Set<string>();
 
       messages.forEach((msg) => {
-        if (msg.sender_id !== user.id) {
-          msg.receiver_type === "peer"
-            ? peerIds.add(msg.sender_id)
-            : mentorIds.add(msg.sender_id);
-        }
-        if (msg.receiver_id !== user.id) {
-          msg.receiver_type === "peer"
-            ? peerIds.add(msg.receiver_id)
-            : mentorIds.add(msg.receiver_id);
-        }
+        const outgoing = String(msg.sender_id) === String(user.id) && msg.sender_type === "peer";
+        const otherId = outgoing ? msg.receiver_id : msg.sender_id;
+        const otherType = outgoing ? msg.receiver_type : msg.sender_type;
+        (otherType === "peer" ? peerIds : mentorIds).add(String(otherId));
       });
 
       // Fetch peers
       const { data: peers } = await supabase
-        .from("users")
+        .from("users_directory")
         .select("id, userName, avatar")
         .in("id", Array.from(peerIds));
 
       // Fetch mentors
       const { data: mentors } = await supabase
-        .from("mentors")
+        .from("mentors_directory")
         .select("id, full_name, avatar")
         .in("id", Array.from(mentorIds));
 
@@ -101,7 +95,9 @@ const MessageNamesList: React.FC = () => {
       setLoading(false);
     };
 
-    fetchMessageNames();
+    void fetchMessageNames();
+    const poll = setInterval(fetchMessageNames, 5000);
+    return () => clearInterval(poll);
   }, [user?.id]);
 
   if (userLoading || loading) return (
@@ -122,7 +118,7 @@ const MessageNamesList: React.FC = () => {
       <ul className="flex flex-col gap-3">
         {users.map((u) => (
           <li
-            key={u.id}
+            key={`${u.type}-${u.id}`}
             className="flex flex-col gap-1 bg-gray-50 rounded-md p-2"
              onClick={() => router.push(`/home/messages/${u.type}/${u.id}`)}
           >

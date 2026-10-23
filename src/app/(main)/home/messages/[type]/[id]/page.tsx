@@ -22,6 +22,7 @@ type Message = {
   sender_id: string;
   receiver_id: string;
   receiver_type: "peer" | "mentor";
+  sender_type: "peer" | "mentor";
   content: string;
   created_at: string;
 };
@@ -49,7 +50,7 @@ const MessagesId = () => {
       if (params.type === "peer") {
         // Fetch from users table
         const { data, error } = await supabase
-          .from("users")
+          .from("users_directory")
           .select(" id, userName, userEmail, avatar")
           .eq("id", params.id)
           .single();
@@ -68,7 +69,7 @@ const MessagesId = () => {
       } else {
         // Fetch from mentors table
         const { data, error } = await supabase
-          .from("mentors")
+          .from("mentors_directory")
           .select("id, full_name, email, avatar")
           .eq("id", params.id)
           .single();
@@ -100,8 +101,8 @@ const MessagesId = () => {
       .from("messages")
       .select("*")
       .or(
-        `and(sender_id.eq.${user.id},receiver_id.eq.${profileId},receiver_type.eq.${profileType}),` +
-        `and(sender_id.eq.${profileId},receiver_id.eq.${user.id},receiver_type.eq.${profileType})`
+        `and(sender_id.eq.${user.id},sender_type.eq.peer,receiver_id.eq.${profileId},receiver_type.eq.${profileType}),` +
+        `and(sender_id.eq.${profileId},sender_type.eq.${profileType},receiver_id.eq.${user.id},receiver_type.eq.peer)`
       )
       .order("created_at", { ascending: true });
 
@@ -126,15 +127,17 @@ const MessagesId = () => {
 
         // Only add if it belongs to this conversation
         if (
-          (newMessage.sender_id === String(user.id) && newMessage.receiver_id === profileId) ||
-          (newMessage.sender_id === profileId && newMessage.receiver_id === String(user.id))
+          (String(newMessage.sender_id) === String(user.id) && newMessage.sender_type === "peer" && String(newMessage.receiver_id) === String(profileId) && newMessage.receiver_type === profileType) ||
+          (String(newMessage.sender_id) === String(profileId) && newMessage.sender_type === profileType && String(newMessage.receiver_id) === String(user.id) && newMessage.receiver_type === "peer")
         ) {
-          setMessages((prev) => [...prev, newMessage]);
+          setMessages(prev => prev.some(m => m.id === newMessage.id) ? prev : [...prev, newMessage]);
         }
       }
     )
     .subscribe();
+    const poll = setInterval(fetchMessages, 5000);
   return () => {
+    clearInterval(poll);
     supabase.removeChannel(subscription);
   };
 }, [profileId, profileType, user?.id]);
@@ -143,16 +146,17 @@ const MessagesId = () => {
   const sendMessage = async () => {
     if (!text.trim() || !user?.id || !profileId || !profileType) return;
 
-    const { error } = await supabase.from("messages").insert({
+    const { data: sent, error } = await supabase.from("messages").insert({
       sender_id: user.id,
       receiver_id: profileId,
       receiver_type: profileType,
       content: text,
-    });
+    }).select().single();
 
     if (error) {
       console.error("Send error:", error);
     } else {
+      if (sent) setMessages(prev => prev.some(m => m.id === sent.id) ? prev : [...prev, sent]);
       setText("");
     }
   };
@@ -191,14 +195,14 @@ const MessagesId = () => {
             <div
               key={m.id}
               className={`flex ${
-                m.sender_id === String(user?.id)
+                String(m.sender_id) === String(user?.id) && m.sender_type === "peer"
                   ? "justify-end"
                   : "justify-start"
               }`}
             >
               <div
                 className={`p-2 rounded-lg max-w-[60%] font-raleway text-base ${
-                  m.sender_id === String(user?.id)
+                  String(m.sender_id) === String(user?.id) && m.sender_type === "peer"
                     ? "bg-blue-500 text-white"
                     : "bg-white text-gray-800"
                 }`}
@@ -212,6 +216,8 @@ const MessagesId = () => {
       <div className="flex border-t p-3 gap-2 ">
         <Input
           placeholder="Type a message..."
+          maxLength={10000}
+          aria-label="Message"
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="flex-1 bg-blue-100"

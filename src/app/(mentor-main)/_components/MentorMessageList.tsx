@@ -12,6 +12,7 @@ type Message = {
   sender_id: string;
   receiver_id: string;
   receiver_type: "peer" | "mentor";
+  sender_type: "peer" | "mentor";
   content: string;
   created_at: string;
 };
@@ -38,8 +39,7 @@ const MentorMessagesList: React.FC = () => {
       const { data: messages, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("receiver_type", "mentor")
-        .or(`sender_id.eq.${mentor.id},receiver_id.eq.${mentor.id}`);
+        .or(`and(sender_id.eq.${mentor.id},sender_type.eq.mentor),and(receiver_id.eq.${mentor.id},receiver_type.eq.mentor)`);
 
       if (error) {
         console.error("Error fetching messages:", error);
@@ -56,17 +56,13 @@ const MentorMessagesList: React.FC = () => {
       // 2️⃣ Collect peer (user) IDs
       const peerIds = new Set<string>();
       messages.forEach((msg) => {
-        if (msg.sender_id !== mentor.id) {
-          peerIds.add(msg.sender_id);
-        }
-        if (msg.receiver_id !== mentor.id) {
-          peerIds.add(msg.receiver_id);
-        }
+        if (msg.sender_type === "peer") peerIds.add(String(msg.sender_id));
+        if (msg.receiver_type === "peer") peerIds.add(String(msg.receiver_id));
       });
 
       // 3️⃣ Fetch peers from users table
       const { data: peers } = await supabase
-        .from("users")
+        .from("users_directory")
         .select("id, userName, avatar")
         .in("id", Array.from(peerIds));
 
@@ -82,7 +78,8 @@ const MentorMessagesList: React.FC = () => {
       setLoading(false);
     };
 
-    fetchMessageNames();
+    void fetchMessageNames();
+    const poll = setInterval(fetchMessageNames, 5000);
 
     // 🔴 Subscribe to new inserts
     const subscription = supabase
@@ -93,15 +90,15 @@ const MentorMessagesList: React.FC = () => {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: "receiver_type=eq.mentor",
+
         },
         async (payload) => {
           const newMessage = payload.new as Message;
 
           // Only react if this mentor is involved
           if (
-            newMessage.sender_id === mentor.id ||
-            newMessage.receiver_id === mentor.id
+            (String(newMessage.sender_id) === String(mentor.id) && newMessage.sender_type === "mentor") ||
+            (String(newMessage.receiver_id) === String(mentor.id) && newMessage.receiver_type === "mentor")
           ) {
             // Refetch the users list so new peers appear
             fetchMessageNames();
@@ -111,6 +108,7 @@ const MentorMessagesList: React.FC = () => {
       .subscribe();
 
     return () => {
+      clearInterval(poll);
       supabase.removeChannel(subscription);
     };
   }, [mentor?.id]);

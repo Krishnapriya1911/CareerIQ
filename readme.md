@@ -4,6 +4,10 @@ An AI-assisted career development platform built with **Next.js, TypeScript and 
 
 [Source code](https://github.com/Krishnapriya1911/CareerIQ) · [Report an issue](https://github.com/Krishnapriya1911/CareerIQ/issues) · [Demo data guide](DEMO_DATA_SETUP.md) · [Deployment verification](DEPLOYMENT_STATUS.md)
 
+## Current release status
+
+The account-isolation repair is prepared for review. Its database migration is not applied and CareerIQ is not deployed. Payments/top-ups and persistent exam event recording are unavailable. See [release readiness and verification](DEPLOYMENT_STATUS.md) and [database repair scope](database/README.md) before deploying this branch.
+
 ## Project overview
 
 CareerIQ explores how a single application can help students organize career preparation: assess interests, create a learning plan, practise interviews and track applications. Its codebase includes a React interface, Next.js API routes, PostgreSQL-backed data access and integrations with AI, voice and scheduling services.

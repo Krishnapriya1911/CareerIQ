@@ -39,7 +39,7 @@ export default function AuthPage() {
           password,
           options: {
             data: { role: "mentor" },
-            emailRedirectTo: `${window.location.origin}/email-verified`,
+            emailRedirectTo: `${window.location.origin}/auth/confirm?next=/auth-mentor/callback`,
             // captchaToken: token || undefined,
           },
         });
@@ -49,6 +49,7 @@ export default function AuthPage() {
           setError("Please check your email for verification link");
           return;
         }
+        if (data.session) router.push("/auth-mentor/callback");
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
