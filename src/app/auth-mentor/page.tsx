@@ -11,6 +11,7 @@ import { LuChevronRight, LuInfo, LuLoader } from "react-icons/lu";
 import { AnimatedGradientTextDemo } from "@/app/auth/_components/GerdaientText";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { useRouter } from "next/navigation";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import Link from "next/link";
@@ -36,7 +37,7 @@ export default function AuthPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/confirm?next=/auth-mentor/callback`,
+          redirectTo: `${getSiteUrl()}/auth/confirm?next=/auth-mentor/callback`,
           queryParams: { role: "mentor" },
         },
       });
@@ -58,7 +59,7 @@ export default function AuthPage() {
           password,
           options: {
             data: { role: "mentor" },
-            emailRedirectTo: `${window.location.origin}/auth/confirm?next=/auth-mentor/callback`,
+            emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=/auth-mentor/callback`,
             // captchaToken: token || undefined,
           },
         });
