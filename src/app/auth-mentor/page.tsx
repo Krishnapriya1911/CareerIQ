@@ -29,6 +29,25 @@ export default function AuthPage() {
   const [isSignup, setIsSignup] = useState<boolean>(false);
   const supabase = createClient();
 
+  async function handleLogin(provider: "discord" | "slack_oidc") {
+    setLoading(true);
+    setError("");
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/confirm?next=/auth-mentor/callback`,
+          queryParams: { role: "mentor" },
+        },
+      });
+
+      if (oauthError) throw oauthError;
+    } catch (err: any) {
+      setError(err.error_description || err.message || "Unable to start social sign-in.");
+      setLoading(false);
+    }
+  }
+
   async function HandleAuth() {
     setLoading(true);
     setError("");
@@ -144,6 +163,27 @@ export default function AuthPage() {
                 {isSignup ? "Creating Account" : "Logging In"}
               </span>
             </p>
+
+            <div className="flex flex-col gap-3 mb-6">
+              <Button
+                type="button"
+                className="font-inter text-sm tracking-wide bg-blue-50 text-black rounded border shadow-sm hover:bg-blue-100 w-[280px] py-5"
+                disabled={loading}
+                onClick={() => void handleLogin("discord")}
+              >
+                <Image src="/discord.png" alt="" width={25} height={25} className="mr-5" />
+                Continue with Discord
+              </Button>
+              <Button
+                type="button"
+                className="font-inter text-sm tracking-wide bg-blue-50 text-black rounded border shadow-sm hover:bg-blue-100 w-[280px] py-5"
+                disabled={loading}
+                onClick={() => void handleLogin("slack_oidc")}
+              >
+                <Image src="/slack.png" alt="" width={25} height={25} className="mr-5" />
+                Continue with Slack
+              </Button>
+            </div>
 
             <div className="flex flex-col gap-5 w-full max-w-[320px] mx-auto ">
               <div className="flex items-center justify-center gap-2 ">
