@@ -21,9 +21,9 @@ export default function HomePage() {
   useEffect(() => {
     const checkSession = async () => {
       const {
-        data: { session },
+        data: { user },
         error,
-      } = await supabase.auth.getSession();
+      } = await supabase.auth.getUser();
 
       // Animate loading messages
       messages.forEach((_, i) => {
@@ -36,13 +36,12 @@ export default function HomePage() {
         return;
       }
 
-      if (session && session.user) {
-        console.log("✅ Session found:", session.user.email);
+      if (user) {
 
-        // Check role from user_metadata
-        const role = session.user.user_metadata?.role;
 
-        if (role === "mentor") {
+        const { data: mentor } = await supabase.from("mentors").select("id").eq("auth_uid", user.id).maybeSingle();
+
+        if (mentor) {
           setTimeout(() => router.replace("/auth-mentor/callback"), 3000);
         } else {
           setTimeout(() => router.replace("/auth/callback"), 3000);

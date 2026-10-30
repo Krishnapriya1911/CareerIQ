@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test:config": "ts-node --project scripts/tsconfig.json scripts/verify-service-config.ts"
+    "test:config": "ts-node --project scripts/tsconfig.json scripts/verify-service-config.ts",
+    "test:database": "node scripts/verify-database.mjs",
+    "test:http": "node scripts/verify-http.mjs"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.92.2",
@@ -101,6 +103,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",

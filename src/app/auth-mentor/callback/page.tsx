@@ -14,7 +14,7 @@ import { LuLoader } from "react-icons/lu";
 const MentorCallback = () => {
   const supabase = createClient();
   const router = useRouter();
-  const { mentor, isNewMentor, loading, ensureUserInDB } = useUserData();
+  const { mentor, isNewMentor, loading, error, ensureUserInDB } = useUserData();
 
   async function signOut() {
     try {
@@ -46,6 +46,11 @@ const MentorCallback = () => {
     }
   }, [isNewMentor, loading, mentor]);
 
+  useEffect(() => {
+    if (!loading && !mentor && !error) router.replace("/auth-mentor");
+  }, [loading, mentor, error, router]);
+
+  if (error) return <main className="min-h-screen grid place-content-center gap-4 p-8"><p role="alert">{error}</p><Button onClick={() => void ensureUserInDB()}>Retry loading profile</Button><Button variant="outline" onClick={signOut}>Sign out</Button></main>;
   if (loading || !mentor) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -66,7 +71,7 @@ const MentorCallback = () => {
       : null;
 
   console.log(onboardingStatus);
-  if (onboardingStatus === "false" || isNewMentor) {
+  if (!mentor.is_verified || onboardingStatus === "false" || isNewMentor) {
     return (
       <div className="h-screen w-full relative bg-white ">
         <div className="absolute top-2 left-5 z-50">

@@ -55,11 +55,11 @@ export function TopupCard() {
           setAmount(razorpayAmount);
           startPayment();
         }}
-        disabled={loading}
+        disabled
         className="mb-6 rounded-full border border-gray-800 bg-transparent font-semibold text-gray-800 transition-colors hover:bg-gray-100"
         variant="outline"
       >
-        {loading ? "Processing..." : "Top Up Now"}
+        Top-ups unavailable
       </Button>
     </div>
   );

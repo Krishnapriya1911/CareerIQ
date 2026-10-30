@@ -1,52 +1,32 @@
-import { google } from "googleapis";
-import { createClient } from "@/lib/supabase/client";
-import { NextResponse } from "next/server";
+import { google } from 'googleapis';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const code = url.searchParams.get("code");
-  const userId = url.searchParams.get("state");
-
-  if (!code || !userId) {
-    return NextResponse.json(
-      { error: "Missing code or user ID" },
-      { status: 400 }
-    );
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+    return NextResponse.json({ error: 'Google Calendar is not configured' }, { status: 503 });
   }
-
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    return NextResponse.json(
-      { error: "Missing Google OAuth credentials" },
-      { status: 500 }
-    );
+  const params = new URL(req.url).searchParams;
+  const jar = await cookies();
+  const state = jar.get('careeriq_calendar_state')?.value;
+  jar.delete('careeriq_calendar_state');
+  if (!state || state !== params.get('state') || !params.get('code')) {
+    return NextResponse.json({ error: 'Invalid or expired calendar authorization' }, { status: 400 });
   }
-
-
-  const oauthClient = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID!,
-    process.env.GOOGLE_CLIENT_SECRET!,
-    process.env.GOOGLE_REDIRECT_URI!
-  );
-
-  let tokens;
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return NextResponse.json({ error: 'Sign in required' }, { status: 401 });
   try {
-    const result = await oauthClient.getToken(code);
-    tokens = result.tokens;
-
-  } catch (err) {
-    return NextResponse.json(
-      { error: "Token exchange failed" },
-      { status: 500 }
-    );
+    const oauth = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, process.env.GOOGLE_REDIRECT_URI);
+    const { tokens } = await oauth.getToken(params.get('code')!);
+    const { data: profile } = await supabase.from('users').select('google_refresh_token').eq('auth_uid', user.id).single();
+    const refreshToken = tokens.refresh_token || profile?.google_refresh_token;
+    if (!refreshToken) return NextResponse.json({ error: 'Offline calendar authorization was not granted. Please reconnect.' }, { status: 400 });
+    const { error: saveError } = await supabase.from('users').update({ google_refresh_token: refreshToken, calendarconnected: true }).eq('auth_uid', user.id);
+    if (saveError) return NextResponse.json({ error: 'Calendar connection could not be saved' }, { status: 500 });
+    return NextResponse.redirect(new URL('/home/calendar', req.url));
+  } catch {
+    return NextResponse.json({ error: 'Calendar authorization failed. Please reconnect.' }, { status: 502 });
   }
-
-  const supabase = createClient();
-  await supabase
-    .from("users")
-    .update({ google_refresh_token: tokens.refresh_token })
-    .eq("id", userId);
-
-  console.log("USER ID FROM GOOGLE CALLBACK:", userId);
-
-  return NextResponse.redirect(new URL("/home/calendar", req.url));
 }

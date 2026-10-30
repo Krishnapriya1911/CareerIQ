@@ -2,7 +2,6 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRazorpayStore } from "@/lib/store/RazorpayStore";
-import Script from 'next/script';
 
 interface PricingCardProps {
   name: string;
@@ -28,10 +27,7 @@ export function PricingCard({
 
   return (
     <>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-      />
+
       <div
         className={cn(
           "flex flex-col rounded-2xl p-6 transition-all duration-300",
@@ -73,7 +69,7 @@ export function PricingCard({
             )}
             variant="outline"
           >
-            2K+ Worth Joining Bonus
+            Free account
           </Button>
         ) : (
           <Button
@@ -81,7 +77,7 @@ export function PricingCard({
               setAmount(displayPrice);
               startPayment();
             }}
-            disabled={loading}
+            disabled
             className={cn(
               "mb-6 rounded-full font-semibold transition-colors cursor-pointer",
               isFeatured
@@ -90,7 +86,7 @@ export function PricingCard({
             )}
             variant="outline"
           >
-            {loading ? "Loading..." : "Get Started"}
+            Paid plans unavailable
           </Button>
         )}
         <div className="space-y-3">

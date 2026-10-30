@@ -57,7 +57,7 @@ export default function MentorSessionsTabs() {
 
       // Fetch user details from `users` table
       const { data: users, error: userError } = await supabase
-        .from("users")
+        .from("users_directory")
         .select("id, userName, userEmail, avatar")
         .in("id", studentIds);
 
@@ -101,7 +101,7 @@ export default function MentorSessionsTabs() {
           ) {
             // Fetch user details for this student
             const { data: user, error: userError } = await supabase
-              .from("users")
+              .from("users_directory")
               .select("id, userName, userEmail, avatar")
               .eq("id", newSession.student_id)
               .single();

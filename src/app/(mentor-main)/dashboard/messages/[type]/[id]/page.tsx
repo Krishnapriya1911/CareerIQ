@@ -11,6 +11,7 @@ type Message = {
   sender_id: string;
   receiver_id: string;
   receiver_type: "peer" | "mentor";
+  sender_type: "peer" | "mentor";
   content: string;
   created_at: string;
 };
@@ -42,7 +43,7 @@ const MentorMessagesId = () => {
     const fetchProfile = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("users")
+        .from("users_directory")
         .select("id, userName, userEmail, avatar")
         .eq("id", profileId)
         .single();
@@ -72,10 +73,9 @@ const MentorMessagesId = () => {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("receiver_type", "mentor")
-        .or(
-          `and(sender_id.eq.${mentor.id},receiver_id.eq.${profileId}),` +
-            `and(sender_id.eq.${profileId},receiver_id.eq.${mentor.id})`
+                .or(
+          `and(sender_id.eq.${mentor.id},sender_type.eq.mentor,receiver_id.eq.${profileId},receiver_type.eq.peer),` +
+            `and(sender_id.eq.${profileId},sender_type.eq.peer,receiver_id.eq.${mentor.id},receiver_type.eq.mentor)`
         )
         .order("created_at", { ascending: true });
 
@@ -94,21 +94,20 @@ const MentorMessagesId = () => {
         (payload) => {
           const newMessage = payload.new as Message;
 
-          if (
-            newMessage.receiver_type === "mentor" &&
-            ((newMessage.sender_id === mentor.id &&
-              newMessage.receiver_id === profileId) ||
-              (newMessage.sender_id === profileId &&
-                newMessage.receiver_id === mentor.id))
-          ) {
-            setMessages((prev) => [...prev, newMessage]);
-          }
+        if (
+          (String(newMessage.sender_id) === String(mentor.id) && newMessage.sender_type === "mentor" && String(newMessage.receiver_id) === String(profileId) && newMessage.receiver_type === "peer") ||
+          (String(newMessage.sender_id) === String(profileId) && newMessage.sender_type === "peer" && String(newMessage.receiver_id) === String(mentor.id) && newMessage.receiver_type === "mentor")
+        ) {
+          setMessages(prev => prev.some(m => m.id === newMessage.id) ? prev : [...prev, newMessage]);
+        }
         }
       )
       .subscribe();
+    const poll = setInterval(fetchMessages, 5000);
 
     return () => {
-      supabase.removeChannel(subscription);
+      clearInterval(poll);
+    supabase.removeChannel(subscription);
     };
   }, [profileId, mentor?.id]);
 
@@ -116,16 +115,18 @@ const MentorMessagesId = () => {
   const sendMessage = async () => {
     if (!text.trim() || !mentor?.id || !profileId) return;
 
-    const { error } = await supabase.from("messages").insert({
+    const { data: sent, error } = await supabase.from("messages").insert({
       sender_id: mentor.id,
       receiver_id: profileId,
-      receiver_type: "mentor", //always mentor
+      receiver_type: "peer",
+      sender_type: "mentor",
       content: text,
-    });
+    }).select().single();
 
     if (error) {
       console.error("Send error:", error);
     } else {
+      if (sent) setMessages(prev => prev.some(m => m.id === sent.id) ? prev : [...prev, sent]);
       setText("");
     }
   };
@@ -163,7 +164,7 @@ const MentorMessagesId = () => {
               <div
                 key={m.id}
                 className={`mb-2 ${
-                  m.sender_id === mentor?.id ? "text-right" : "text-left"
+                  String(m.sender_id) === String(mentor?.id) && m.sender_type === "mentor" ? "text-right" : "text-left"
                 }`}
               >
                 <span className="inline-block px-3 py-2 rounded-lg bg-white">
@@ -178,7 +179,9 @@ const MentorMessagesId = () => {
             <input
               type="text"
               className="flex-1 border rounded px-3 py-2"
-              value={text}
+              maxLength={10000}
+          aria-label="Message"
+          value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Type a message..."
             />

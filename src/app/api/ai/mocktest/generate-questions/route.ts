@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
+  if (!process.env.GROQ_API_KEY) return NextResponse.json({ error: 'AI service is not configured' }, { status: 503 });
   try {
     const body = await request.json();
     const { careerPath, difficulty, count = 10, timestamp, random, sessionId, forceNew } = body;
@@ -24,6 +25,10 @@ export async function POST(request: NextRequest) {
         { error: 'Valid difficulty level is required' },
         { status: 400 }
       );
+    }
+
+    if (!Number.isInteger(count) || count < 1 || count > 20 || careerPath.length > 200) {
+      return NextResponse.json({ error: 'Use 1–20 questions and a career name up to 200 characters' }, { status: 400 });
     }
 
     // Get pipeline instance
