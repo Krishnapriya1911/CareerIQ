@@ -12,6 +12,7 @@ import { AnimatedGradientTextDemo } from "./_components/GerdaientText";
 // import Silk from "@/components/Silk/Silk";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { useRouter } from "next/navigation";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import Link from "next/link";
@@ -33,7 +34,7 @@ export default function AuthPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/confirm`,
+        redirectTo: `${getSiteUrl()}/auth/confirm`,
         queryParams: {
           role: "user",
         },
@@ -56,7 +57,7 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/confirm`,
+            emailRedirectTo: `${getSiteUrl()}/auth/confirm`,
             // captchaToken: token || undefined,
             data: { role: "user" },
           },

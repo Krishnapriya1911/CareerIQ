@@ -35,6 +35,7 @@ import Image from "next/image";
 import { useUserData } from "@/context/UserDataProvider";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 
 type Profession =
   | "12th Student"
@@ -174,7 +175,7 @@ export function OnboardingCard() {
   async function copyReferral() {
     if (!user) return;
 
-    const link = `${window.location.origin}/invite/${user.invite_link}`;
+    const link = `${getSiteUrl()}/invite/${user.invite_link}`;
 
     await navigator.clipboard.writeText(link);
 
@@ -191,7 +192,7 @@ export function OnboardingCard() {
   async function shareReferral() {
     if (!user) return;
 
-    const link = `${window.location.origin}/invite/${user.invite_link}`;
+    const link = `${getSiteUrl()}/invite/${user.invite_link}`;
 
     if (navigator.share) {
       try {
