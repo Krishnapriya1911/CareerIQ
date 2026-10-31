@@ -84,11 +84,40 @@ Return the structured response only.
 
 export async function POST(request: Request) {
   try {
+    const body: QuizRequest = await request.json();
+    const { quizData, userStatus, mainFocus } = body;
+
+    if (!quizData || quizData.length === 0) {
+      return NextResponse.json({ isError: true, error: "Missing quiz data" }, { status: 400 });
+    }
+
+    // Keep the assessment usable when the optional AI provider is not configured.
+    // This is a transparent, deterministic summary of the user's own responses.
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { isError: true, error: "AI service is not configured", followUps: [] },
-        { status: 503 }
-      );
+      const answerText = quizData.map((item) => item.answer).filter(Boolean).join(" ");
+      const words = answerText.toLowerCase();
+      const interests = [
+        ["cloud", /cloud|aws|azure|gcp|google cloud/],
+        ["software engineering", /software|coding|programming|developer|build apps/],
+        ["data and analytics", /data|analytics|statistics|visuali[sz]/],
+        ["artificial intelligence", /ai|artificial intelligence|machine learning|automation/],
+        ["cybersecurity", /security|cyber|network|ethical hacking/],
+        ["design and user experience", /design|creative|user experience|ui|ux/],
+        ["business and entrepreneurship", /business|entrepreneur|management|leadership/],
+      ].filter(([, pattern]) => (pattern as RegExp).test(words)).map(([label]) => label as string);
+      const careerOptions = interests.length
+        ? interests.slice(0, 5).map((interest) => `${interest[0].toUpperCase()}${interest.slice(1)} specialist`)
+        : ["Software developer", "Cloud support engineer", "Data analyst", "QA engineer", "Technical support engineer"];
+      const insights: Record<string, unknown> = {
+        stream: userStatus || "Not specified",
+        Interest: interests.length ? interests.join(", ") : "Your selected quiz responses",
+        summary: `This preliminary profile is based on your quiz responses and ${mainFocus || "your stated focus"}. ${interests.length ? `Your answers suggest interest in ${interests.join(" and ")}.` : "Your responses did not point to one clear interest area yet."} Treat these suggestions as starting points to explore; they are not an AI-generated assessment.`,
+        careerOptions,
+        degree: ["Computer Science", "Information Technology", "A related applied degree"],
+      };
+      if (userStatus === "12th student") insights.collegePreference = "Review your selected answers";
+      else insights.confidence = "Not assessed";
+      return NextResponse.json({ data: { insights }, fallback: true });
     }
 
     const llm = new ChatGroq({
@@ -96,16 +125,6 @@ export async function POST(request: Request) {
       temperature: 0.2,
       maxTokens: 1200,
     });
-
-    const body: QuizRequest = await request.json();
-    const { quizData, userStatus, mainFocus } = body;
-
-    if (!quizData || quizData.length === 0) {
-      return NextResponse.json(
-        { isError: true, error: "Missing quiz data" },
-        { status: 400 }
-      );
-    }
 
     // Pick schema + prompt dynamically
     const { schema, prompt } = getSchemaAndPrompt(userStatus, mainFocus);

@@ -157,6 +157,8 @@ export interface InterviewFeedback {
       improvements?: string[];
 
       recommendation?: string;
+
+      sourceNote?: string;
     };
   };
 }

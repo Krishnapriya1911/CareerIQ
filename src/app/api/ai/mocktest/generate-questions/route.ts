@@ -7,7 +7,6 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
-  if (!process.env.GROQ_API_KEY) return NextResponse.json({ error: 'AI service is not configured' }, { status: 503 });
   try {
     const body = await request.json();
     const { careerPath, difficulty, count = 10, timestamp, random, sessionId, forceNew } = body;
@@ -60,12 +59,13 @@ export async function POST(request: NextRequest) {
       const fallbackQuestions = pipeline.getFallbackQuestions(
         difficulty as DifficultyLevel,
         careerPath
-      );
+      ).slice(0, count);
 
       return NextResponse.json({
         success: true,
         questions: fallbackQuestions,
         count: fallbackQuestions.length,
+        fallback: true,
         warning: 'Using fallback questions due to generation error',
       });
     }

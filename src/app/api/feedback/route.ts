@@ -99,20 +99,6 @@ function extractJson(text: string) {
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { isError: true, error: "AI service is not configured", followUps: [] },
-        { status: 503 }
-      );
-    }
-
-    const llm = new ChatGroq({
-      model: "openai/gpt-oss-120b",
-      temperature: 0.2,
-      maxTokens: 1800,
-      maxRetries: 3,
-    });
-
     const body = await req.json();
 
     const conversation = body?.conversation;
@@ -165,6 +151,37 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (!process.env.GROQ_API_KEY) {
+      const userResponses = conversation.filter((message: any) => {
+        const role = message?.role || message?.sender || message?.type;
+        return role === "user";
+      });
+      const responseCount = userResponses.length;
+      const report = {
+        feedback: {
+          rating: {
+            technicalSkills: 5,
+            communication: 5,
+            problemSolving: 5,
+            experience: 5,
+          },
+          summary: `A transcript was captured with ${responseCount} candidate response${responseCount === 1 ? "" : "s"}. The AI reviewer is not configured, so this report does not assess answer accuracy, technical skill, or interview performance.`,
+          strengths: responseCount > 0 ? [`The transcript contains ${responseCount} candidate response${responseCount === 1 ? "" : "s"}.`] : [],
+          improvements: ["AI scoring is unavailable until the service is configured; review your answers with a mentor or interviewer for meaningful feedback."],
+          recommendation: "Use this saved transcript as a practice record. The displayed neutral scores are placeholders, not an evaluation.",
+          sourceNote: "Basic transcript report. Neutral scores are placeholders; answer quality was not evaluated.",
+        },
+      };
+      return NextResponse.json({ data: report, fallback: true });
+    }
+
+    const llm = new ChatGroq({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.2,
+      maxTokens: 1800,
+      maxRetries: 3,
+    });
 
     console.log(
       "📝 Generating feedback for conversation:",

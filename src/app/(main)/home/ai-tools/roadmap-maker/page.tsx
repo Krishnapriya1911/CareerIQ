@@ -158,6 +158,9 @@ const RoadmapMaker = () => {
 
       if (insertError) throw insertError;
       setRoadmapId(insertedRows?.[0]?.id);
+      if (roadmapJson.fallback) {
+        toast.info("A starter roadmap is ready. AI personalization is temporarily unavailable.");
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || "Something went wrong");
     } finally {
