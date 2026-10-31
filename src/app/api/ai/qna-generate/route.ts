@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { NextResponse } from "next/server";
 import { ChatGroq } from "@langchain/groq";
 import { PromptTemplate } from "@langchain/core/prompts";
@@ -38,35 +36,41 @@ Requirements:
 - Questions should be short to medium length and suitable for an oral interview.
 - Do not provide answers.
 - Do not include markdown or explanations.
-- Return only the structured response matching the provided schema.
+- Return a valid JSON object with this exact shape: {"interviewQuestions":[{"question":"..."}]}
 `);
 
-
-
-
+function fallbackQuestions(jobTitle: string) {
+  const title = jobTitle.trim().slice(0, 120) || "this role";
+  return [
+    `What interests you about the ${title} role, and how does it fit your goals?`,
+    `Which skills from the job description are your strongest, and what example demonstrates them?`,
+    `Describe a project where you used a skill relevant to ${title}. What was your contribution?`,
+    "Tell me about a technical or work problem you solved and how you approached it.",
+    "How do you learn an unfamiliar tool or technology when a project requires it?",
+    "Describe a time you received feedback or worked through a disagreement with a teammate.",
+    `What would you focus on learning during your first 90 days in this ${title} role?`,
+  ].map((question) => ({ question }));
+}
 
 
 export async function POST(request: Request) {
+  let requestedJobTitle = "this role";
   try {
     const body: InterviewRequest = await request.json();
     const { jobTitle, jobDescription } = body;
+    if (typeof jobTitle === "string" && jobTitle.trim()) {
+      requestedJobTitle = jobTitle;
+    }
 
     if (!jobTitle?.trim() || !jobDescription?.trim()) {
       return NextResponse.json({ isError: true, error: "Missing required fields: jobTitle and jobDescription" }, { status: 400 });
     }
 
     if (!process.env.GROQ_API_KEY) {
-      const title = jobTitle.trim().slice(0, 120);
-      const interviewQuestions = [
-        `What interests you about the ${title} role, and how does it fit your goals?`,
-        `Which skills from the job description are your strongest, and what example demonstrates them?`,
-        `Describe a project or task where you used a skill relevant to ${title}. What was your contribution?`,
-        `Tell me about a technical or work problem you had to solve. How did you approach it?`,
-        `How do you learn an unfamiliar tool or technology when a project requires it?`,
-        `Describe a time you received feedback or worked through a disagreement with a teammate.`,
-        `What would you focus on learning during your first 90 days in this ${title} role?`,
-      ].map((question) => ({ question }));
-      return NextResponse.json({ data: { interviewQuestions }, fallback: true });
+      return NextResponse.json({
+        data: { interviewQuestions: fallbackQuestions(jobTitle) },
+        fallback: true,
+      });
     }
 
     const llm = new ChatGroq({
@@ -75,7 +79,11 @@ export async function POST(request: Request) {
       maxTokens: 1200,
       maxRetries: 3,
     });
-    const structuredLlm = llm.withStructuredOutput(questionSchema);
+    // JSON mode avoids Groq's tool-call argument parser, which can reject
+    // otherwise valid generated question lists with a 400 tool_use_failed.
+    const structuredLlm = llm.withStructuredOutput(questionSchema, {
+      method: "jsonMode",
+    });
     const chain = promptTemplate.pipe(structuredLlm);
 
     const result = await chain.invoke({
@@ -89,16 +97,15 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error("❌ QNA GENERATION ERROR:", error);
-
-    return NextResponse.json(
-      {
-        isError: true,
-        error:
-          error?.message ||
-          "Failed to generate interview questions. Please try again.",
-      },
-      { status: 500 }
-    );
+    // Interview prep should remain usable when the provider is unavailable or
+    // returns malformed structured output. Never surface provider diagnostics.
+    console.error("QNA generation failed; returning practice fallback", {
+      status: error?.status,
+      code: error?.code,
+    });
+    return NextResponse.json({
+      data: { interviewQuestions: fallbackQuestions(requestedJobTitle) },
+      fallback: true,
+    });
   }
 }
