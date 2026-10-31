@@ -147,7 +147,11 @@ export default function Quiz() {
       setInsights(data.insights);
       setFinished(false);
       setReadyToSave(true);
-      toast.success("Quiz submitted successfully!");
+      if (res.data.fallback) {
+        toast.info("Quiz summary is ready. AI insights are temporarily unavailable.");
+      } else {
+        toast.success("Quiz submitted successfully!");
+      }
     } catch (err: any) {
       console.error("❌ handleSubmit error:", err.message || err);
       toast.error(err.message || "Failed to submit quiz. Please try again.");

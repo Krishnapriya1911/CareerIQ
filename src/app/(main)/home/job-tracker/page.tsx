@@ -309,7 +309,11 @@ const JobTracker = () => {
       });
 
       console.log("🧠 AI Response:", response.data);
-      toast.success("Interview QnA generated successfully!");
+      if (response.data?.fallback) {
+        toast.info("Practice questions are ready. AI personalization is temporarily unavailable.");
+      } else {
+        toast.success("Interview QnA generated successfully!");
+      }
     } catch (error: any) {
       console.error("❌ Error generating QnA");
 

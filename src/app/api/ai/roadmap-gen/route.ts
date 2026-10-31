@@ -44,15 +44,65 @@ const RoadmapSchema = z.object({
 
 const parser = StructuredOutputParser.fromZodSchema(RoadmapSchema as any);
 
+function createFallbackRoadmap(field: string, timeline: string, mode: string) {
+  const normalized = field.toLowerCase();
+  const track = normalized.includes("cloud")
+    ? [
+        ["Networking and Linux", "Practice IP, DNS, Linux commands, and shell basics.", "https://roadmap.sh/devops"],
+        ["Cloud fundamentals", "Learn core compute, storage, networking, and shared responsibility concepts.", "https://cloud.google.com/learn"],
+        ["Identity and security", "Work through IAM, least privilege, secrets, and basic threat modeling.", "https://cloud.google.com/iam/docs"],
+        ["Infrastructure as code", "Define repeatable cloud resources and keep configurations in version control.", "https://developer.hashicorp.com/terraform/tutorials"],
+        ["Containers and delivery", "Package a small service and deploy it through a simple CI/CD workflow.", "https://docs.docker.com/get-started/"],
+        ["Monitoring and portfolio", "Add logs, metrics, alerts, and document a deployed cloud project.", "https://cloud.google.com/monitoring/docs"],
+      ]
+    : normalized.includes("data") || normalized.includes("analyt")
+      ? [
+          ["Data foundations", "Practice spreadsheets, SQL basics, and how to ask answerable data questions.", "https://roadmap.sh/data-analyst"],
+          ["SQL and data modeling", "Query relational data and design clear tables and joins.", "https://www.postgresql.org/docs/current/tutorial.html"],
+          ["Python analysis", "Use Python to clean, inspect, and summarize a small dataset.", "https://pandas.pydata.org/docs/getting_started/intro_tutorials/"],
+          ["Visualization", "Choose useful charts and explain the limits of the data.", "https://www.tableau.com/learn/training"],
+          ["Applied project", "Answer a focused question using a public dataset and reproducible steps.", "https://github.com/skills"],
+          ["Portfolio and communication", "Publish your analysis with a concise, evidence-based summary.", "https://roadmap.sh/data-analyst"],
+        ]
+      : [
+          ["Core foundations", `Review the fundamentals needed for ${field} and build a small practice routine.`, "https://roadmap.sh"],
+          ["Tools and workflow", "Set up the main tools, version your work, and learn a repeatable development workflow.", "https://github.com/skills"],
+          ["Applied fundamentals", `Complete guided exercises that use the core concepts of ${field}.`, "https://roadmap.sh"],
+          ["Intermediate practice", "Build a small project that combines multiple concepts and document your decisions.", "https://github.com/skills"],
+          ["Specialization", `Choose one advanced area within ${field} and study its official documentation.`, "https://roadmap.sh"],
+          ["Portfolio and review", "Polish one project, explain what you learned, and ask for feedback.", "https://github.com/skills"],
+        ];
+  const initialNodes = track.map(([title, description, link], index) => ({
+    id: `node-${index + 1}`,
+    type: "default",
+    position: { x: (index % 3) * 280, y: Math.floor(index / 3) * 220 },
+    data: { title, description, link },
+  }));
+  return {
+    roadmapTitle: `${field} Learning Roadmap`,
+    description: `A ${mode.toLowerCase()}-level starting plan for learning ${field}. Adjust the sequence to your goals and available study time.`,
+    duration: timeline,
+    initialNodes,
+    initialEdges: initialNodes.slice(1).map((node, index) => ({
+      id: `edge-${index + 1}`,
+      source: `node-${index + 1}`,
+      target: node.id,
+    })),
+    fallback: true,
+  };
+}
+
 
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+    const field = typeof body.field === "string" && body.field.trim() ? body.field.trim().slice(0, 120) : "Software Developer";
+    const timeline = typeof body.timeline === "string" && body.timeline.trim() ? body.timeline.trim().slice(0, 60) : "3 months";
+    const mode = typeof body.mode === "string" && body.mode.trim() ? body.mode.trim().slice(0, 40) : "Beginner";
+
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { isError: true, error: "AI service is not configured", followUps: [] },
-        { status: 503 }
-      );
+      return NextResponse.json(createFallbackRoadmap(field, timeline, mode));
     }
 
     const model = new ChatGroq({
@@ -61,10 +111,6 @@ export async function POST(req: Request) {
       maxTokens: 1000,
     });
 
-    const body = await req.json();
-    const field = body.field || "Software Developer";
-    const timeline = body.timeline || "3 months";
-    const mode = body.mode || "Beginner";
     const formatInstructions = parser.getFormatInstructions();
 
     const firstPrompt = `
@@ -170,6 +216,10 @@ ${formatInstructions}
     return NextResponse.json(finalParsed);
   } catch (error: any) {
     console.error("Roadmap generation error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    try {
+      return NextResponse.json(createFallbackRoadmap("Software Developer", "3 months", "Beginner"));
+    } catch {
+      return NextResponse.json({ error: error.message || "Roadmap generation failed" }, { status: 500 });
+    }
   }
 }

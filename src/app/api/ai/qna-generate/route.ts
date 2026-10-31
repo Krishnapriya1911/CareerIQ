@@ -48,11 +48,25 @@ Requirements:
 
 export async function POST(request: Request) {
   try {
+    const body: InterviewRequest = await request.json();
+    const { jobTitle, jobDescription } = body;
+
+    if (!jobTitle?.trim() || !jobDescription?.trim()) {
+      return NextResponse.json({ isError: true, error: "Missing required fields: jobTitle and jobDescription" }, { status: 400 });
+    }
+
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json(
-        { isError: true, error: "AI service is not configured", followUps: [] },
-        { status: 503 }
-      );
+      const title = jobTitle.trim().slice(0, 120);
+      const interviewQuestions = [
+        `What interests you about the ${title} role, and how does it fit your goals?`,
+        `Which skills from the job description are your strongest, and what example demonstrates them?`,
+        `Describe a project or task where you used a skill relevant to ${title}. What was your contribution?`,
+        `Tell me about a technical or work problem you had to solve. How did you approach it?`,
+        `How do you learn an unfamiliar tool or technology when a project requires it?`,
+        `Describe a time you received feedback or worked through a disagreement with a teammate.`,
+        `What would you focus on learning during your first 90 days in this ${title} role?`,
+      ].map((question) => ({ question }));
+      return NextResponse.json({ data: { interviewQuestions }, fallback: true });
     }
 
     const llm = new ChatGroq({
@@ -63,19 +77,6 @@ export async function POST(request: Request) {
     });
     const structuredLlm = llm.withStructuredOutput(questionSchema);
     const chain = promptTemplate.pipe(structuredLlm);
-
-    const body: InterviewRequest = await request.json();
-    const { jobTitle, jobDescription } = body;
-
-    if (!jobTitle?.trim() || !jobDescription?.trim()) {
-      return NextResponse.json(
-        {
-          isError: true,
-          error: "Missing required fields: jobTitle and jobDescription",
-        },
-        { status: 400 }
-      );
-    }
 
     const result = await chain.invoke({
       jobTitle: jobTitle.trim(),

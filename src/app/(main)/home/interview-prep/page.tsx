@@ -286,6 +286,12 @@ const InterviewDefault = () => {
                   Summary
                 </h4>
 
+                {selected.interviewInsights.feedback.sourceNote && (
+                  <p className="mb-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    {selected.interviewInsights.feedback.sourceNote}
+                  </p>
+                )}
+
                 <p className="text-sm text-gray-800 font-inter leading-relaxed">
                   {selected.interviewInsights.feedback.summary ||
                     "No summary available."}

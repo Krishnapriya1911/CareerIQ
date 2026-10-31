@@ -8,27 +8,18 @@ const RETRY_DELAY = 500;
 const REQUEST_TIMEOUT = 15000;
 
 class QuestionGenerationPipeline {
-  private llm: ChatGroq;
+  private llm: ChatGroq | null = null;
   private promptTemplate: PromptTemplate;
 
   constructor() {
-    // Initialize Groq LLM with error handling
-    try {
-      const apiKey = process.env.GROQ_API_KEY;
-
-      if (!apiKey) {
-        throw new Error('GROQ_API_KEY environment variable is not set');
-      }
-
+    const apiKey = process.env.GROQ_API_KEY;
+    if (apiKey) {
       this.llm = new ChatGroq({
-        apiKey: apiKey,
-        model: 'llama-3.1-8b-instant', // Ultra-fast model for quiz generation
+        apiKey,
+        model: 'llama-3.1-8b-instant',
         temperature: 0.7,
-        maxTokens: 2000, // Optimized for speed
+        maxTokens: 2000,
       });
-    } catch (error) {
-      console.error('Failed to initialize Groq LLM:', error);
-      throw new Error('LLM initialization failed');
     }
 
     // Create prompt template for question generation
@@ -137,6 +128,10 @@ Career: {careerPath}
     count: number = 10,
     sessionId?: string
   ): Promise<Question[]> {
+    if (!this.llm) {
+      throw new Error('AI provider is not configured');
+    }
+
     let lastError: Error | null = null;
 
     // Start question generation immediately with a simple prompt if web search takes too long

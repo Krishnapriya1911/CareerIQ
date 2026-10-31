@@ -380,7 +380,11 @@ Key Guidelines:
 
       console.log("✅ Interview feedback saved to Supabase!");
 
-      toast.success("Feedback generated and saved successfully!");
+      if (response.data?.fallback) {
+        toast.info("Transcript report saved. AI scoring is unavailable until the service is configured.");
+      } else {
+        toast.success("Feedback generated and saved successfully!");
+      }
     } catch (error: any) {
       console.error("❌ Feedback Error:", {
         message: error?.message,
