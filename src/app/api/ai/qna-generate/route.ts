@@ -36,7 +36,7 @@ Requirements:
 - Questions should be short to medium length and suitable for an oral interview.
 - Do not provide answers.
 - Do not include markdown or explanations.
-- Return a valid JSON object with this exact shape: {"interviewQuestions":[{"question":"..."}]}
+- Return a valid JSON object with this exact shape: {{"interviewQuestions":[{{"question":"..."}}]}}
 `);
 
 function fallbackQuestions(jobTitle: string) {
